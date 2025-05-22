@@ -1,16 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-
-/**
- *
- * @author sarahtrinidad
- */
-/**
- * MotorPH Payroll System - Group 8
- * @author sarahtrinidad
- */
+import java.util.Scanner;
 
 public class Group8Motorph {
 
@@ -18,14 +6,14 @@ public class Group8Motorph {
 
     // 1. Employee
     static class Employee {
-        private String id;
+        private int id;
         private String name;
         private String position;
         private double salary;
         private String employmentType;
         private LoginSession login;
 
-        public Employee(String id, String name, String position, double salary, String employmentType, LoginSession login) {
+        public Employee(int id, String name, String position, double salary, String employmentType, LoginSession login) {
             this.id = id;
             this.name = name;
             this.position = position;
@@ -39,7 +27,7 @@ public class Group8Motorph {
         }
 
         public double calculateDeductions() {
-            Deductions deductions = new Deductions();
+            Deductions deductions = new Deductions(salary);
             return deductions.totalDeduction();
         }
 
@@ -49,6 +37,10 @@ public class Group8Motorph {
 
         public String getName() {
             return name;
+        }
+
+        public LoginSession getLogin() {
+            return login;
         }
     }
 
@@ -65,6 +57,10 @@ public class Group8Motorph {
         public boolean authenticate(String pw) {
             return passwordHash.equals(Integer.toString(pw.hashCode()));
         }
+
+        public String getUsername() {
+            return username;
+        }
     }
 
     // 3. Payroll
@@ -74,43 +70,56 @@ public class Group8Motorph {
         private double grossPay;
         private double deductions;
         private double netPay;
+        private Deductions deductionsBreakdown;
 
         public Payroll(Employee employee, String period, double grossPay) {
             this.employee = employee;
             this.period = period;
             this.grossPay = grossPay;
+            this.deductionsBreakdown = new Deductions(grossPay);
         }
 
         public void computePayroll() {
-            deductions = employee.calculateDeductions();
+            deductions = deductionsBreakdown.totalDeduction();
             netPay = grossPay - deductions;
         }
 
         public void printPayroll() {
             System.out.println("Payroll for: " + employee.getName());
             System.out.println("Gross Pay: " + grossPay);
-            System.out.println("Deductions: " + deductions);
-            System.out.println("Net Pay: " + netPay);
+            System.out.println("Deductions Breakdown:");
+            System.out.printf("  SSS: %.2f\n", deductionsBreakdown.calculateSSS());
+            System.out.printf("  PhilHealth: %.2f\n", deductionsBreakdown.calculatePhilHealth());
+            System.out.printf("  Pag-IBIG: %.2f\n", deductionsBreakdown.calculatePagIbig());
+            System.out.printf("  Tax: %.2f\n", deductionsBreakdown.calculateTax());
+            System.out.printf("  Other Deductions: %.2f\n", deductionsBreakdown.calculateOtherDeductions());
+            System.out.printf("Total Deductions: %.2f\n", deductions);
+            System.out.printf("Net Pay: %.2f\n", netPay);
         }
     }
 
     // 4. Deductions
     static class Deductions {
+        private double salary;
+
+        public Deductions(double salary) {
+            this.salary = salary;
+        }
 
         public double calculateSSS() {
-            return 200.0;
+            return salary * 0.045; // 4.5% for example
         }
 
         public double calculatePhilHealth() {
-            return 150.0;
+            return salary * 0.03; // 3%
         }
 
         public double calculatePagIbig() {
-            return 100.0;
+            return salary * 0.02; // 2%
         }
 
         public double calculateTax() {
-            return 300.0;
+            return salary * 0.10; // 10%
         }
 
         public double calculateOtherDeductions() {
@@ -125,12 +134,12 @@ public class Group8Motorph {
 
     // 5. Attendance
     static class Attendance {
-        private String id;
+        private int id;
         private String date;
         private String timeIn;
         private String timeOut;
 
-        public Attendance(String id, String date, String timeIn, String timeOut) {
+        public Attendance(int id, String date, String timeIn, String timeOut) {
             this.id = id;
             this.date = date;
             this.timeIn = timeIn;
@@ -148,20 +157,40 @@ public class Group8Motorph {
 
     // ---------- MAIN METHOD FOR DEMO ----------
     public static void main(String[] args) {
-        // Setup login
-        LoginSession login = new LoginSession("sarahtrinidad", Integer.toString("mypassword".hashCode()));
+        Scanner scanner = new Scanner(System.in);
 
-        // Setup employee
-        Employee emp = new Employee("EMP001", "Sarah Trinidad", "Developer", 30000.0, "Full-Time", login);
+        // Setup login and employees
+        Employee[] employees = new Employee[] {
+            new Employee(1, "Sarah Trinidad", "Developer", 30000.0, "Full-Time", new LoginSession("sarahtrinidad", Integer.toString("mypassword".hashCode()))),
+            new Employee(2, "Jett Dagsa", "Developer", 28000.0, "Full-Time", new LoginSession("jet01", Integer.toString("password123".hashCode()))),
+            new Employee(3, "Ela Abigail Acal", "Developer", 45000.0, "Full-Time", new LoginSession("ela02", Integer.toString("pass123".hashCode()))),
+            new Employee(4, "Franchella Martini micu-Paculan", "Developer", 35000.0, "Full-Time", new LoginSession("fran03", Integer.toString("pass12345".hashCode()))),
+            new Employee(5, "Irisha Bea Montaño", "Developer", 32000.0, "Full-Time", new LoginSession("iris04", Integer.toString("pass123456".hashCode())))
+        };
 
-        // Setup payroll
-        Payroll payroll = new Payroll(emp, "May 2025", emp.getSalary());
-        payroll.computePayroll();
-        payroll.printPayroll();
+        System.out.println("Welcome to Motorph Payroll System");
+        System.out.print("Enter username: ");
+        String inputUsername = scanner.nextLine();
+        System.out.print("Enter password: ");
+        String inputPassword = scanner.nextLine();
 
-        // Optional: Test attendance
-        Attendance att = new Attendance("A001", "2025-05-18", "08:00", "17:00");
-        System.out.println("Worked Hours: " + att.calculateWorkedHours());
+        Employee loggedInEmployee = null;
+        for (Employee emp : employees) {
+            if (emp.getLogin().getUsername().equals(inputUsername) && emp.getLogin().authenticate(inputPassword)) {
+                loggedInEmployee = emp;
+                break;
+            }
+        }
+
+        if (loggedInEmployee != null) {
+            System.out.println("\nLogin successful.\n");
+            Payroll payroll = new Payroll(loggedInEmployee, "May 2025", loggedInEmployee.getSalary());
+            payroll.computePayroll();
+            payroll.printPayroll();
+        } else {
+            System.out.println("\nInvalid credentials. Access denied.");
+        }
+
+        scanner.close();
     }
 }
-
